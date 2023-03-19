@@ -36,10 +36,15 @@ def fetch_and_filter_element(element) -> Optional[Tuple[
             views = utube.get_views_count()
             title = utube.get_title()
 
-            logging.info("Attempt %s to find data for %s link: \n"
-                         "Publish date: %s \nViews: %s \nTitle: %s \n",
-                         attempt, direct_video_link, publish_date,
-                         views, title)
+            logging.info("Attempt %s to find data for %s: \n"
+                         "Publish date: %s \n"
+                         "Views: %s \n"
+                         "Title: %s \n",
+                         attempt,
+                         direct_video_link,
+                         publish_date,
+                         views,
+                         title)
 
             # publish date less then 14 days and has 200k+ views
             if config.FIFTEEN_DAYS_AGO < publish_date \
@@ -78,13 +83,16 @@ def main():
     try:
         for channel_name, channel_link in channels:
             # navigate to the webpage with the desired element
-            driver.get(f"{channel_link}/video")
+            driver.get(f"{channel_link}/videos")
 
             # Click the "Accept all" button to skip cookie banner (only once)
-            agree_button = driver.find_element_by_xpath(
-                "//button[@aria-label='Accept all']")
-            if agree_button:
+
+            try:
+                agree_button = driver.find_element_by_xpath(
+                    "//button[@aria-label='Accept all']")
                 agree_button.click()
+            except Exception as err:
+                logging.info("Unable to find \"Accept all\" button")
 
             # Scroll to the end of the page once, also download next 30 videos
             app = driver.find_element_by_tag_name("ytd-app")
@@ -106,33 +114,26 @@ def main():
                 # function for each element in parallel
                 filtered_screenshot_elements = pool.map(
                     fetch_and_filter_element, screenshots_elements)
-                # remove None items
-                filtered_screenshot_elements = [
-                    el for el in filtered_screenshot_elements if el]
+
+            # remove None items
+            filtered_screenshot_elements = [
+                el for el in filtered_screenshot_elements if el]
 
             logging.info("Found %s filtered screenshot elements",
                          len(filtered_screenshot_elements))
 
-            response = send_message_telegram_bot(channel_name)
-            if response.status_code != 200:
-                raise TelegramSendMessageFailedError(
-                    f'Error sending photo: {response.status_code} '
-                    f'{response.text}')
+            send_message_telegram_bot(channel_name)
             # take a screenshot of the element and save it to a file
             for title, video_link, el in filtered_screenshot_elements:
                 screenshot_path = f'{config.SCREENSHOTS_PATH}/{title}.png'
                 # Creating an instance of ActionChains class for each element
                 action = ActionChains(driver)
-                # Hovering over the element
-                action.move_to_element(el).perform()
+                # move to the element without hovering mouse arrow on it to
+                # not play video gif
+                action.move_to_element_with_offset(el, 0, 0).perform()
                 el.screenshot(screenshot_path)
                 # send screenshot to the
-                response = send_picture_telegram_bot(screenshot_path,
-                                                     video_link)
-                if response.status_code != 200:
-                    raise TelegramSendPictureFailedError(
-                        f'Error sending photo: {response.status_code} '
-                        f'{response.text}')
+                send_picture_telegram_bot(screenshot_path, video_link)
 
     except Exception as err:
         logging.error(err)
@@ -147,6 +148,12 @@ if __name__ == "__main__":
         format='%(asctime)s [%(name)s] %(levelname)s: %(message)s')
 
     if not config.BOT_TOKEN:
-        raise ValueError("BOT_TOKEN var is not set")
+        raise ValueError("BOT_TOKEN env var is not set")
+
+    if not config.SCREENSHOTS_PATH:
+        raise ValueError("SCREENSHOTS_PATH env var is not set")
+
+    if not config.CHAT_ID:
+        raise ValueError("CHAT_ID env var is not set")
 
     main()

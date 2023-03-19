@@ -1,9 +1,12 @@
 import datetime
 import os
+from dotenv import load_dotenv
+
+# Load config from .env file
+load_dotenv()
 
 # App config
-SCREENSHOTS_PATH = os.getenv("SCREENSHOTS_PATH",
-                             "/Users/mmishche/dev/home/youtube/screenshots")
+SCREENSHOTS_PATH = os.getenv("SCREENSHOTS_PATH")
 
 # Telegram client config
 BOT_TOKEN = os.getenv("BOT_TOKEN")

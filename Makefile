@@ -2,10 +2,10 @@
 run:
 	python youtube_selenium_parser.py
 
+# call this target to prepare app to call run target
 prepare:
 	tar -zxvf src/chromedriver_mac64.zip
 
 # call this target to cleanup screenshots folder
 clear:
-	rm -rf screenshots
-	mkdir screenshots
+	rm -r screenshots/*

@@ -1,8 +1,7 @@
 chromedriver
 LICENSE.chromedriver
-env.local
+.env
 
 
-venv
 .idea
 __pycache__
