@@ -17,7 +17,7 @@ YOUTUBE_URL = "https://www.youtube.com"
 TIM_TIM_URL = f"{YOUTUBE_URL}/@TIMTIN"
 
 # Selenium client config
-# empty so far
+OS_PRIMARY_LANGUAGE = os.getenv("OS_PRIMARY_LANGUAGE", "EN")
 
 # Constants
 CLAUSE_100K = 10 ** 5

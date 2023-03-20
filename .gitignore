@@ -1,7 +1,9 @@
 chromedriver
 LICENSE.chromedriver
 .env
+venv
 screenshots/*
+*.zip
 
 .idea
 __pycache__
