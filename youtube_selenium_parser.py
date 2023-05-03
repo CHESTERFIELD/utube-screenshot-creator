@@ -11,9 +11,14 @@ import selenium.webdriver.remote.webelement
 from selenium import webdriver
 
 import config
-from telegram_client import send_picture_telegram_bot, \
-    send_message_telegram_bot
+from telegram_client import (
+    send_picture_telegram_bot, send_message_telegram_bot
+)
 from youtube_client import UtubeClient, get_channel_name
+
+
+ACCEPT_ALL_UA = "Прийняти усі"
+ACCEPT_ALL_EN = "Accept all"
 
 
 def parse_video_link_from_weblement(webelement):
@@ -62,6 +67,9 @@ def is_check_datetime_older_than_video_publish_date(
 
 def fetch_and_filter_element(element) -> Optional[Tuple[
         str, str, selenium.webdriver.remote.webelement.WebElement]]:
+    """Compute selenium.WebElement vid_info data and returns required data
+    covered to the tuple if it under conditions or None.
+    """
     video_link = parse_video_link_from_weblement(element)
 
     attempt = 0
@@ -126,19 +134,18 @@ def main():
 
             # Click the button to skip cookie banner (cold start only)
             try:
-                if config.OS_PRIMARY_LANGUAGE == "UA":
-                    label = "Прийняти усі"
-                else:
-                    label = "Accept all"
+                label = ACCEPT_ALL_UA if config.OS_PRIMARY_LANGUAGE == "UA" \
+                    else ACCEPT_ALL_EN
 
                 agree_button = driver.find_element_by_xpath(
                     f"//button[@aria-label='{label}']")
                 agree_button.click()
             except Exception as err:
                 logging.warning("Unable to find \"Accept all\" button."
-                                "Error occured: %s", err)
+                                "Error occurred: %s", err)
 
             # TODO: do we really need this sleep call here?
+            # sleep 3 seconds to wait when page and previews pictures loaded
             time.sleep(3)
 
             skip_second_page = False
@@ -168,13 +175,14 @@ def main():
             if not skip_second_page:
                 # parse the element of interest
                 if load_second_page(first_page_elements[-1]):
-                    # Scroll to the end of the page to download next 30 videos
+                    # scroll to the end of the page to call JS script to
+                    # download next 30 videos for client (driver)
                     app = driver.find_element_by_tag_name("ytd-app")
                     driver.execute_script(
                         f"window.scrollTo(0, {app.size['height']});")
 
                     # TODO: do we really need this sleep call here?
-                    # sleep 3 seconds to wait page load
+                    # sleep 3 seconds to wait when page and previews pictures loaded
                     time.sleep(3)
 
                     screenshots_elements = driver.find_elements_by_tag_name(
@@ -187,7 +195,8 @@ def main():
                     screenshots_elements = driver.find_elements_by_tag_name(
                         "ytd-rich-item-renderer")
 
-            logging.info("Found %s screenshot elements", len(screenshots_elements))
+            logging.info("Found %s screenshot elements",
+                         len(screenshots_elements))
 
             # Create a pool of worker processes
             with Pool(processes=os.cpu_count()-1) as pool:
@@ -211,6 +220,8 @@ def main():
                 screenshot_path = os.path.join(
                     config.SCREENSHOTS_PATH, f"{title_without_slash}.png")
 
+                # scroll viewable part of driver window to the element Y point
+                # to be able to take a screenshot in a full size
                 driver.execute_script(
                     f"window.scrollTo(0, {el.location['y']-el.size['height']});")
 
