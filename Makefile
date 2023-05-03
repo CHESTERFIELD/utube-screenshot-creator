@@ -4,8 +4,8 @@ run:
 
 # call this target to prepare app to call run target
 prepare:
-	tar -zxvf src/chromedriver_mac64.zip
+	mkdir screenshots
 
 # call this target to cleanup screenshots folder
 clear:
-	rm -r screenshots/*
+	rm -r screenshots/* || true
