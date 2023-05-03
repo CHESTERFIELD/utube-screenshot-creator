@@ -255,4 +255,6 @@ if __name__ == "__main__":
     if not config.CHROMEDRIVER_PATH:
         raise ValueError("CHROMEDRIVER_PATH env var is not set")
 
+    start = time.time()
     main()
+    logging.info("Finishing parse process in %f seconds", time.time() - start)
