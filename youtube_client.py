@@ -1,12 +1,18 @@
 import datetime
 from pytube import YouTube, Channel
+from pytube import request
+
+import config
 
 
 class UtubeClient(YouTube):
-
     """Follow YouTube class, but implemented to have custom client."""
 
     def __init__(self, *args, **kwargs) -> None:
+        try:
+            request.default_headers["Accept-Language"] = config.YOUTUBE_ACCEPT_LANGUAGES
+        except Exception:
+            pass
         super().__init__(*args, **kwargs)
 
     def get_views_count(self) -> int:
